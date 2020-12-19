@@ -3,6 +3,7 @@ package ru.mrbrikster.chatty.notifications;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import org.jetbrains.annotations.NotNull;
 import ru.mrbrikster.chatty.Chatty;
 import ru.mrbrikster.chatty.dependencies.DependencyManager;
 import ru.mrbrikster.chatty.dependencies.PlaceholderAPIHook;
@@ -12,6 +13,7 @@ import ru.mrbrikster.chatty.util.Pair;
 import ru.mrbrikster.chatty.util.TextUtil;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ChatNotification extends Notification {
@@ -33,22 +35,27 @@ public class ChatNotification extends Notification {
         for (String message : messages) {
             message = TextUtil.fixMultilineFormatting(message);
 
-            String[] lines = message.split("(\n)|(\\\\n)");
-
-            List<Pair<String, Boolean>> formattedLines = new ArrayList<>();
-            for (String line : lines) {
-                try {
-                    JsonObject jsonObject = JSON_PARSER.parse(line).getAsJsonObject();
-                    debugger.debug("Seems to line is JSON!");
-                    formattedLines.add(Pair.of(jsonObject.toString(), true));
-                } catch (JsonSyntaxException | IllegalStateException exception) {
-                    debugger.debug("Seems to line is not JSON. Using as plain text");
-                    formattedLines.add(Pair.of(TextUtil.stylish(prefix + line), false));
-                }
+            try {
+                JsonObject jsonObject = JSON_PARSER.parse(message).getAsJsonObject();
+                debugger.debug("Seems to line is JSON!");
+                this.messages.add(Collections.singletonList(Pair.of(jsonObject.toString(), true)));
+            } catch (JsonSyntaxException | IllegalStateException exception) {
+                debugger.debug("Seems to line is not JSON. Using as plain text");
+                this.messages.add(formatSimpleMessage(prefix, message));
             }
-
-            this.messages.add(formattedLines);
         }
+    }
+
+    @NotNull
+    private List<Pair<String, Boolean>> formatSimpleMessage(String prefix, String messageText) {
+        List<Pair<String, Boolean>> formattedLines = new ArrayList<>();
+        String[] lines = messageText.split("(\n)|(\\\\n)");
+
+        for (String line : lines) {
+            formattedLines.add(Pair.of(TextUtil.stylish(prefix + line), false));
+        }
+
+        return formattedLines;
     }
 
     @Override
