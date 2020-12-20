@@ -261,11 +261,16 @@ public class ChatListener implements Listener, EventExecutor {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onSpyMessage(AsyncPlayerChatEvent event) {
-        Pair<Chat, List<Player>> pair = pendingSpyMessages.remove(event.getPlayer());
+        Pair<Chat, List<Player>> pair = pendingSpyMessages
+                .remove(event.getPlayer());
 
-        if (pair.getA().isSpyEnabled()
-                && configuration.getNode("spy.enable").getAsBoolean(false)
-                && !event.isCancelled()) {
+        if (null == pair) {
+            return;
+        }
+
+        ConfigurationNode isSpyEnabled = configuration.getNode("spy.enable");
+
+        if (pair.getA().isSpyEnabled() && isSpyEnabled.getAsBoolean(false) && !event.isCancelled()) {
             String spyInfo = TextUtil.stylish(configuration.getNode("spy.format.chat")
                     .getAsString("&6[Spy] &r{format}")
                     .replace("{format}", String.format(
